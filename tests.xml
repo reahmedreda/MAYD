@@ -1,0 +1,15 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd" >
+<suite name="All Tests" data-provider-thread-count="4"  thread-count="6">
+    <test name="shoppingE2E">
+        <parameter name="browser" value="Chrome" />
+        <classes>
+            <class name="TestShoppingE2E"></class>
+        </classes>
+    </test>
+    <test name="login">
+        <parameter name="browser" value="FireFox" />
+        <classes>
+            <class name="TestLoginPage"></class>
+        </classes>
+    </test>
+</suite>

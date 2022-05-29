@@ -1,0 +1,7 @@
+*.log
+target/
+*/libraries
+.idea/
+.allure/*
+allure-report
+*.iml
