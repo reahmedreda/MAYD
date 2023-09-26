@@ -15,9 +15,6 @@ public class CartPage {
                 getRemoveCartItemsBtns = new ElementDTO("//button[contains(@class,'btn') and text()='Remove']",WebUIActions.Locators.XPath),
                 checkoutBtn = new ElementDTO("checkout", WebUIActions.Locators.id);
 
-    public CartPage(String key){
-        uiActions = new WebUIActions(key);
-    }
 
     public CartPage(){
         uiActions = new WebUIActions();

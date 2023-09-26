@@ -15,9 +15,6 @@ public class CheckoutPage {
 
     WebUIActions uiActions;
 
-    public CheckoutPage(String key){
-        uiActions = new WebUIActions(key);
-    }
 
     public CheckoutPage(){
         uiActions = new WebUIActions();

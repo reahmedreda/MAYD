@@ -27,7 +27,7 @@ public class TestLoginPage extends TestBase{
     @Test(dataProvider = "getCredentialsTestData")
     public void testLoginWithAllUsers(CredentialsDTO credentials){
         String uniqueKey = String.valueOf(Thread.currentThread().getId());
-        LoginPage loginPage =new LoginPage(uniqueKey);
+        LoginPage loginPage =new LoginPage();
         loginPage.navigateToLoginPage();
         boolean loginSucceeded = loginPage.login(credentials.getUsername(),credentials.getPassword());
         Assert.assertEquals(loginSucceeded,credentials.isExpectedToLogin(),"asserting login status");

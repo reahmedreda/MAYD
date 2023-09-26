@@ -1,7 +1,7 @@
 package Actions.UI;
 import io.github.bonigarcia.wdm.WebDriverManager;
-import org.openqa.selenium.Platform;
-import org.openqa.selenium.WebDriver;
+import org.apache.commons.io.FileUtils;
+import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.firefox.FirefoxDriver;
@@ -10,6 +10,8 @@ import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.testng.Assert;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
@@ -18,162 +20,177 @@ import java.util.Set;
 
 public class BrowserActions {
 
-    public static Map<String,RemoteWebDriver> mapper = new HashMap<>();
-    public static WebDriver driver;
-    public static RemoteWebDriver remoteWebDriver;
-
-    static boolean chromeDriverSetUp = false,
-                    firefoxDriverSetUp = false,
-                    useSeleniumGrid = false;
+    private static ThreadLocal<WebDriver> driverThreadLocal = new ThreadLocal<>();
 
 
-    public static void addWebDriverToMapOfDrivers(String browser, String uniqueKey) {
-        try{
-            try{
-                if(Boolean.valueOf(System.getProperty("useDocker"))){
-                    RemoteWebDriver d = addRemoteDriverToMap(browser);
-                    if(!mapper.containsKey(uniqueKey)) {
-                        mapper.put(uniqueKey, d);
-                        return;
-                    }
-                    else{
-                        mapper.replace(uniqueKey,d);
-                        return;
-                    }
-                }
-            } catch (Exception e){}
-
-            if(browser.toLowerCase().equals(Browsers.chrome.toString().toLowerCase())) {
-                if(!chromeDriverSetUp){
-                    WebDriverManager.chromedriver().setup();
-                    BrowserActions.chromeDriverSetUp = true;
-                }
-                //adding a new driver to the map and link it with a unique key
-                if(!mapper.containsKey(uniqueKey)) {
-                    mapper.put(uniqueKey, new ChromeDriver());
-                }
-                else{
-                    mapper.replace(uniqueKey,new ChromeDriver());
-                }
-            }
-            else if(browser.toLowerCase().equals(Browsers.chromeHeadless.toString().toLowerCase())) {
-                if(!chromeDriverSetUp){
-                    WebDriverManager.chromedriver().setup();
-                    BrowserActions.chromeDriverSetUp = true;
-                }
-                //adding a new driver to the map and link it with a unique key
-                if(!mapper.containsKey(uniqueKey)) {
-                    ChromeOptions options = new ChromeOptions();
-                    options.addArguments("--headless");
-                    mapper.put(uniqueKey, new ChromeDriver(options));
-                }
-                else{
-                    mapper.replace(uniqueKey,new ChromeDriver());
-                }
-            }
-            else if(browser.toLowerCase().equals(Browsers.firefox.toString().toLowerCase())) {
-                if(!firefoxDriverSetUp){
-                    WebDriverManager.firefoxdriver().setup();
-                    BrowserActions.firefoxDriverSetUp = true;
-                }
-                if(!mapper.containsKey(uniqueKey)) {
-                    mapper.put(uniqueKey, new FirefoxDriver());
-                }
-                else{
-                    mapper.replace(uniqueKey,new FirefoxDriver());
-                }
-            }
-        }
-
-        catch(Exception e){
-            //Handle this exception instead of returning null
-
-        }
+    public WebDriver getBrowserSession() {
+        return driverThreadLocal.get();
     }
-    public static void closeDriverAndRemoveFromMap(String key){
-        if(mapper.containsKey(key)) {
+
+
+    public void createBrowserSession(BrowserTypes driverType, Boolean... useRemote) {
+        WebDriver driver;
+        boolean remote = useRemote.length > 0 ? useRemote[0]:false;
+        if (remote) {
             try {
-                mapper.get(key).quit();
+                driver = createRemoteBrowserSession(driverType);
+            } catch (MalformedURLException e) {
+                System.err.println("Selenium Grid URL is invalid. Falling back to local browser session.");
+                driver = createLocalBrowserSession(driverType);
             }
-            catch(Exception e){
-
-            }
-            mapper.remove(key);
+        } else {
+            driver = createLocalBrowserSession(driverType);
         }
-    }
-
-    public static void closeAllDriversFromMap(){
-        Set<String> keys = mapper.keySet();
-        if(keys!=null && keys.size()>0) {
-            for (String key:keys) {
-                    try {
-                        mapper.get(key).quit();
-                    } catch (Exception e) {
-
-                    }
-                    mapper.remove(key);
-                }
-            }
-        }
-
-    public static void initializeWebDriver(String browser){
-        try{
-            if(browser.toLowerCase().equals(Browsers.chrome.toString())) {
-                driver = new ChromeDriver();
-
-            }
-            else if(browser.toLowerCase().equals(Browsers.firefox.toString())) {
-                driver = new FirefoxDriver();
-            }
-        }
-
-        catch(Exception e){
-            //Handle this exception instead of returning null
-
-        }
-    }
-    public static void closeStaticWebDriver(){
-        driver.close();
-    }
-
-    public static RemoteWebDriver addRemoteDriverToMap(String browser) throws MalformedURLException {
-        DesiredCapabilities cap=new DesiredCapabilities();
-
-        if(browser.toLowerCase().equals(Browsers.chrome.toString().toLowerCase())){
-            cap = DesiredCapabilities.chrome();
-            ChromeOptions options = new ChromeOptions();
-            options.addArguments("--headless");
-            cap.merge(options);
-        }
-        else if(browser.toLowerCase().equals(Browsers.firefox.toString().toLowerCase())){
-            cap = DesiredCapabilities.firefox();
-            FirefoxOptions options = new FirefoxOptions();
-            options.addArguments("--headless");
-
-            cap.merge(options);
-        }
-        else{
-            Assert.fail("Wrong Browser");
-        }
-        cap.setPlatform(Platform.LINUX);
-        cap.setVersion("");
-
-        remoteWebDriver = new RemoteWebDriver(new URL("http://localhost:4444/wd/hub"),cap);
-        return remoteWebDriver;
-    }
-    public static void closeRemoteDriver(){
-        remoteWebDriver.close();
-        useSeleniumGrid = false;
+        driverThreadLocal.set(driver);
     }
 
 
-
-
-    enum Browsers{
-        chrome,
-        chromeHeadless,
-        firefox
+    public void closeBrowser() {
+        WebDriver driver = driverThreadLocal.get();
+        if (driver != null) {
+            driver.quit();
+            driverThreadLocal.remove();
+        }
     }
 
+    private WebDriver createRemoteBrowserSession(BrowserTypes driverType) throws MalformedURLException {
+        return new RemoteWebDriver(getGridURL(), getOptions(driverType));
+    }
+
+    private WebDriver createLocalBrowserSession(BrowserTypes driverType) {
+        switch (driverType) {
+            case CHROME:
+                WebDriverManager.chromedriver().setup();
+                return new ChromeDriver();
+            case CHROME_HEADLESS:
+                WebDriverManager.chromedriver().setup();
+                ChromeOptions chromeOptions = new ChromeOptions();
+                chromeOptions.addArguments("--headless");
+                return  new ChromeDriver(chromeOptions);
+            case FIREFOX:
+                return new FirefoxDriver();
+            case FIREFOX_HEADLESS:
+                FirefoxOptions headlessFirefoxOptions = new FirefoxOptions();
+                headlessFirefoxOptions.setHeadless(true);
+                return new FirefoxDriver(headlessFirefoxOptions);
+            // Add more cases for other driver types if needed
+            default:
+                throw new IllegalArgumentException("Invalid driver type: " + driverType);
+        }
+    }
+
+    private URL getGridURL() throws MalformedURLException {
+        return new URL("http://localhost:4444/wd/hub");
+    }
+
+    private DesiredCapabilities getOptions(BrowserTypes driverType) {
+        switch (driverType) {
+            case CHROME:
+                return DesiredCapabilities.chrome();
+            case CHROME_HEADLESS:
+                ChromeOptions chromeOptions = new ChromeOptions();
+                chromeOptions.addArguments("--headless");
+                return DesiredCapabilities.chrome().merge(chromeOptions);
+            case FIREFOX:
+                return DesiredCapabilities.firefox();
+            case FIREFOX_HEADLESS:
+                FirefoxOptions firefoxOptions = new FirefoxOptions();
+                firefoxOptions.setHeadless(true);
+                return DesiredCapabilities.firefox().merge(firefoxOptions);
+            // Add more cases for other driver types if needed
+            default:
+                throw new IllegalArgumentException("Invalid driver type: " + driverType);
+        }
+    }
+
+
+    public void navigateTo(String url) {
+        WebDriver driver = driverThreadLocal.get();
+        driver.get(url);
+    }
+
+
+    public String getPageTitle() {
+        WebDriver driver = driverThreadLocal.get();
+        return driver.getTitle();
+    }
+
+
+    public String getCurrentURL() {
+        WebDriver driver = driverThreadLocal.get();
+        return driver.getCurrentUrl();
+    }
+
+
+    public void maximizeWindow() {
+        WebDriver driver = driverThreadLocal.get();
+        driver.manage().window().maximize();
+    }
+
+
+    public void navigateBack() {
+        WebDriver driver = driverThreadLocal.get();
+        driver.navigate().back();
+    }
+
+
+    public void navigateForward() {
+        WebDriver driver = driverThreadLocal.get();
+        driver.navigate().forward();
+    }
+
+
+    public void refreshPage() {
+        WebDriver driver = driverThreadLocal.get();
+        driver.navigate().refresh();
+    }
+
+
+    public void takeScreenshot(String filePath) {
+        WebDriver driver = driverThreadLocal.get();
+        File screenshotFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+        try {
+            FileUtils.copyFile(screenshotFile, new File(filePath));
+        } catch (IOException e) {
+            System.err.println("Failed to save screenshot: " + e.getMessage());
+        }
+    }
+
+
+    public void waitForPageLoad() {
+        WebDriver driver = driverThreadLocal.get();
+        JavascriptExecutor jsExecutor = (JavascriptExecutor) driver;
+        String pageLoadStatus;
+        do {
+            pageLoadStatus = (String) jsExecutor.executeScript("return document.readyState");
+        } while (!pageLoadStatus.equals("complete"));
+    }
+
+
+    public void switchToFrame(String frameName) {
+        WebDriver driver = driverThreadLocal.get();
+        driver.switchTo().frame(frameName);
+    }
+
+
+    public void switchToWindow(String windowHandle) {
+        WebDriver driver = driverThreadLocal.get();
+        driver.switchTo().window(windowHandle);
+    }
+
+
+    public void executeJavaScript(String script) {
+        WebDriver driver = driverThreadLocal.get();
+        JavascriptExecutor jsExecutor = (JavascriptExecutor) driver;
+        jsExecutor.executeScript(script);
+    }
+
+    public enum BrowserTypes {
+        CHROME,
+        CHROME_HEADLESS,
+        FIREFOX,
+        FIREFOX_HEADLESS
+        // Add more driver types if needed
+    }
 
 }

@@ -8,9 +8,6 @@ public class BurgerMenu {
                 logout = new ElementDTO("logout_sidebar_link", WebUIActions.Locators.id);
 
     WebUIActions uiActions;
-    public BurgerMenu(String key){
-        uiActions = new WebUIActions(key);
-    }
     public BurgerMenu(){
         uiActions = new WebUIActions();
     }

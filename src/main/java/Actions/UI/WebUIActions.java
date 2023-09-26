@@ -21,16 +21,14 @@ import static org.testng.Assert.assertNotNull;
 
 public class WebUIActions {
 
-    public RemoteWebDriver driver;
+    public WebDriver driver;
 
 
-    public WebUIActions(String key){
-            this.driver = BrowserActions.mapper.get(key);
-
-    }
 
     public WebUIActions(){
-            this.driver = (RemoteWebDriver) BrowserActions.driver;
+        BrowserActions browserActions=new BrowserActions();
+            this.driver = browserActions.getBrowserSession();
+
     }
 
     public void setText(ElementDTO ele, String text,boolean clear,boolean assertOnActualValue) {

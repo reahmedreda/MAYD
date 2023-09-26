@@ -14,12 +14,11 @@ import java.util.Map;
 public class TestBase implements ITest {
 
     private ThreadLocal<String> testName = new ThreadLocal<>();
-    Map<String, SoftAssertion> softAssertionMap= new HashMap<>();
-
+    ThreadLocal<SoftAssertion> softAssertionMap= new ThreadLocal<>();
+    BrowserActions browserActions = new BrowserActions();
     @Parameters("browser")
     @BeforeMethod
-    public void setup(String browser,Object[] testData, ITestContext ctx,Method method) {
-        String uniqueKey = String.valueOf(Thread.currentThread().getId());
+    public void setup(@Optional("CHROME") String browser, Object[] testData, ITestContext ctx, Method method) {
 
             if (testData.length > 0) {
                 if (testData[0] instanceof CredentialsDTO) {
@@ -31,34 +30,19 @@ public class TestBase implements ITest {
                 ctx.setAttribute("testName", testName.get());
             } else
                 ctx.setAttribute("testName", method.getName());
-             System.out.println(uniqueKey);
-            BrowserActions.addWebDriverToMapOfDrivers(browser, uniqueKey);
 
-        if(softAssertionMap.containsKey(uniqueKey)){
-            softAssertionMap.replace(uniqueKey,new SoftAssertion());
-        }
-        else {
-            softAssertionMap.put(uniqueKey, new SoftAssertion());
-        }
+        browserActions.createBrowserSession(BrowserActions.BrowserTypes.valueOf(browser),Boolean.valueOf(System.getProperty("useDocker")));
+
+            softAssertionMap.set(new SoftAssertion());
+
     }
 
     @AfterMethod
     public void tearDown(final ITestContext testContext){
-        boolean docker= false;
-        String uniqueKey = String.valueOf(Thread.currentThread().getId());
-        BrowserActions.closeDriverAndRemoveFromMap(uniqueKey);
+        browserActions.closeBrowser();
 
     }
 
-
-
-    @AfterSuite
-    public void afterSuite(){
-        try {
-            BrowserActions.closeAllDriversFromMap();
-        }
-        catch (Exception e){}
-    }
 
     @Override
     public String getTestName() {

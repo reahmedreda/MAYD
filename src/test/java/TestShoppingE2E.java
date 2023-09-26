@@ -48,10 +48,10 @@ public class TestShoppingE2E extends TestBase{
         //a key to get the browser from the hash map
         //as well as to get the soft assertion object
         String uniqueKey = String.valueOf(Thread.currentThread().getId());
-        SoftAssertion softAssert = softAssertionMap.get(uniqueKey);
-        LoginPage loginPage =new LoginPage(uniqueKey);
-        HomePage home= new HomePage(uniqueKey);
-        CartPage cartPage = new CartPage(uniqueKey);
+        SoftAssertion softAssert = softAssertionMap.get();
+        LoginPage loginPage =new LoginPage();
+        HomePage home= new HomePage();
+        CartPage cartPage = new CartPage();
 
         //log in
         loginPage.navigateToLoginPage(true);
@@ -77,10 +77,10 @@ public class TestShoppingE2E extends TestBase{
             // complete rest of authorization urls access here
 
             //check all soft assertion errors and obtain test result accordingly
-            softAssertionMap.get(uniqueKey).assertAll();
+            softAssertionMap.get().assertAll();
 
             // remove the soft assert object from the map
-            softAssertionMap.remove(uniqueKey);
+            softAssertionMap.remove();
             return;
         }
         else{
@@ -126,7 +126,7 @@ public class TestShoppingE2E extends TestBase{
             softAssert.assertEquals(cartPage.checkout(),true,"checking if checkout process initiated");
 
             //Completing checkout and asserting internally that cart is empty after successful checkout
-            CheckoutPage checkoutPage = new CheckoutPage(uniqueKey);
+            CheckoutPage checkoutPage = new CheckoutPage();
             softAssert.assertEquals(checkoutPage.completeCheckout(
                     "Ahmed","Reda","0000"
             ),true,"Asserting that checkout succeeded");
@@ -137,8 +137,8 @@ public class TestShoppingE2E extends TestBase{
 
 
         //Collecting all errors and obtaining test result
-        softAssertionMap.get(uniqueKey).assertAll();
-        softAssertionMap.remove(uniqueKey);
+        softAssertionMap.get().assertAll();
+        softAssertionMap.remove();
 
 
 
@@ -175,10 +175,10 @@ public class TestShoppingE2E extends TestBase{
         //a key to get the browser from the hash map
         //as well as to get the soft assertion object
         String uniqueKey = String.valueOf(Thread.currentThread().getId());
-        SoftAssertion softAssert = softAssertionMap.get(uniqueKey);
-        LoginPage loginPage =new LoginPage(uniqueKey);
-        HomePage home= new HomePage(uniqueKey);
-        CartPage cartPage = new CartPage(uniqueKey);
+        SoftAssertion softAssert = softAssertionMap.get();
+        LoginPage loginPage =new LoginPage();
+        HomePage home= new HomePage();
+        CartPage cartPage = new CartPage();
 
         //log in
         loginPage.navigateToLoginPage(true);
@@ -204,10 +204,10 @@ public class TestShoppingE2E extends TestBase{
             // complete rest of authorization urls access here
 
             //check all soft assertion errors and obtain test result accordingly
-            softAssertionMap.get(uniqueKey).assertAll();
+            softAssertionMap.get().assertAll();
 
             // remove the soft assert object from the map
-            softAssertionMap.remove(uniqueKey);
+            softAssertionMap.remove();
             return;
         }
         else{
@@ -291,7 +291,7 @@ public class TestShoppingE2E extends TestBase{
             }
         }
         //Attemping to log out and assert its success
-        BurgerMenu burgerMenu = new BurgerMenu(uniqueKey);
+        BurgerMenu burgerMenu = new BurgerMenu();
         boolean logoutSucceeded = burgerMenu.logout();
         softAssert.assertEquals(logoutSucceeded,true,"Expecting logout to be passed");
 
@@ -309,8 +309,8 @@ public class TestShoppingE2E extends TestBase{
         }
 
         //Collecting all errors and obtaining test result
-        softAssertionMap.get(uniqueKey).assertAll();
-        softAssertionMap.remove(uniqueKey);
+        softAssertionMap.get().assertAll();
+        softAssertionMap.remove();
 
 
 

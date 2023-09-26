@@ -16,10 +16,6 @@ public class LoginPage {
 
 
     WebUIActions uiActions;
-    public LoginPage(String key){
-
-        uiActions = new WebUIActions(key);
-    }
 
     public LoginPage(){
         uiActions = new WebUIActions();

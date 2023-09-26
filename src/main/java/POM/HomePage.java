@@ -29,9 +29,6 @@ public class HomePage {
         uiActions = new WebUIActions();
     }
 
-    public HomePage(String key){
-        uiActions = new WebUIActions(key);
-    }
 
     public void navigateToHome(Boolean... elementAssertion){
         if(elementAssertion.length>0 && elementAssertion[0]==true ) {
